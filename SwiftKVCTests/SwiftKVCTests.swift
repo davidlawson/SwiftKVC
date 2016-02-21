@@ -70,10 +70,10 @@ class SwiftKVCTests: XCTestCase {
     func testEncodingAndDecoding()
     {
         let sA = StructA(int: 4)
-        let sAEnc = try! sA.encode()
+        let sAEnc: [String: Any] = try! sA.encode()
         
         let sB = StructB(str: "test")
-        let sBEnc = try! sB.encode()
+        let sBEnc: [String: Any] = try! sB.encode()
         
         let types: [Model.Type] = [StructA.self, StructB.self]
         

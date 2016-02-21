@@ -1,5 +1,11 @@
 # SwiftKVC
 
+[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+
+*Currently testing possibilities for automatic serialisation and deserialisation via introspection – @davidlawson*
+
+---------
+
 `SwiftKVC` brings key-value coding to native Swift classes and structures. You can easily set and access properties just using a subscript:
 ```swift
 var person = Person()

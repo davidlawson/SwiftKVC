@@ -7,7 +7,7 @@
 //
 
 import XCTest
-import SwiftKVC
+@testable import SwiftKVC
 
 class SwiftKVCTests: XCTestCase {
     
@@ -57,21 +57,61 @@ class SwiftKVCTests: XCTestCase {
         XCTAssert(lh.bestFriend == rh["bestFriend"] as? Person)
     }
     
+    struct StructA: Model
+    {
+        var int = 3
+    }
+    
+    struct StructB: Model
+    {
+        var str = "str"
+    }
+    
+    func testEncodingAndDecoding()
+    {
+        let sA = StructA(int: 4)
+        let sAEnc = try! sA.encode()
+        
+        let sB = StructB(str: "test")
+        let sBEnc = try! sB.encode()
+        
+        let types: [Model.Type] = [StructA.self, StructB.self]
+        
+        let decA: Any = try! SwiftKVC.decode(sAEnc, possibleTypes: types)
+        let decB: Any = try! SwiftKVC.decode(sBEnc, possibleTypes: types)
+        
+        switch decA
+        {
+            case let dec as StructA:
+                XCTAssertEqual(dec.int, 4)
+            default:
+                XCTFail()
+        }
+        
+        switch decB
+        {
+            case let dec as StructB:
+                XCTAssertEqual(dec.str, "test")
+            default:
+                XCTFail()
+        }
+    }
+    
 }
 
 class Person : Model, Equatable {
     
-    var firstName: String
+    var firstName: String = ""
     var middleName: String?
-    var lastName: String
-    var age: Int
-    var friends: [Person]
+    var lastName: String = ""
+    var age: Int = 0
+    var friends: [Person] = []
     var bestFriend: Person?
     
     var fullName: String {
         return firstName + (middleName != nil ? " \(middleName!) " : " ") + lastName
     }
-    
+    required init() {}
     init(firstName: String, middleName: String? = nil, lastName: String, age: Int, friends: [Person] = [], bestFriend: Person? = nil) {
         self.firstName = firstName
         self.middleName = middleName

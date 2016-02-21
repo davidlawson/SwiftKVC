@@ -19,6 +19,8 @@ public protocol Model : Property
     init()
 }
 
+let TYPE_KEY = "!type"
+
 extension Model {
     
     /** 
@@ -104,9 +106,11 @@ extension Model {
     
     public func encode() throws -> [String: Any]
     {
-        var dict: [String: Any] = [:]
+        let mirror = Mirror(reflecting: self)
         
-        for child in Mirror(reflecting: self).children
+        var dict: [String: Any] = [TYPE_KEY: String(mirror.subjectType)]
+        
+        for child in mirror.children
         {
             if let label = child.label
             {
@@ -174,4 +178,24 @@ extension Model {
         return obj
     }
     
+}
+
+public struct SwiftKVC
+{
+    public static func decode(dict: [String: Any], possibleTypes: [Model.Type]) throws -> Any
+    {
+        let typeStr = dict[TYPE_KEY] as! String
+        
+        var type: Model.Type? = nil
+        for possibleType in possibleTypes
+        {
+            if typeStr == String(possibleType)
+            {
+                type = possibleType
+                break
+            }
+        }
+        
+        return try type!.decode(dict)
+    }
 }

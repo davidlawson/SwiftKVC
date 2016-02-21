@@ -13,7 +13,11 @@
     - All properties must conform to the Property protocol
     - Properties may not be implicitly unwrapped optionals
 */
-public protocol Model : Property {}
+public protocol Model : Property
+{
+    // Required for decoding
+    init()
+}
 
 extension Model {
     
@@ -42,7 +46,7 @@ extension Model {
         for child in Mirror(reflecting: self).children {
             guard let property = child.value.dynamicType as? Property.Type else { throw Error.TypeDoesNotConformToProperty(type: child.value.dynamicType) }
             if child.label == key {
-                try self.codeValue(value, type: child.value.dynamicType, offset: offset)
+                try self.codeValue(value, type: property, offset: offset)
                 return
             } else {
                 offset += property.size()
@@ -96,6 +100,78 @@ extension Model {
             }
         }
         return value
+    }
+    
+    public func encode() throws -> [String: Any]
+    {
+        var dict: [String: Any] = [:]
+        
+        for child in Mirror(reflecting: self).children
+        {
+            if let label = child.label
+            {
+                if let value = child.value as? Model
+                {
+                    dict[label] = try value.encode()
+                    continue
+                }
+                
+                let property: Property?
+                if let optional = child.value as? OptionalProperty
+                {
+                    property = optional.property()
+                }
+                else if let value = child.value as? Property
+                {
+                    property = value
+                }
+                else
+                {
+                    throw Error.TypeDoesNotConformToProperty(type: child.value.dynamicType)
+                }
+                
+                if let object = property
+                {
+                    dict[label] = object
+                }
+            }
+        }
+        
+        return dict
+    }
+    
+    public static func decode(dict: [String: Any]) throws -> Self
+    {
+        var obj = self.init()
+        
+        var offset = 0
+        for child in Mirror(reflecting: obj).children
+        {
+            if let modelType = child.value.dynamicType as? Model.Type
+            {
+                if let label = child.label, entry = dict[label], value = entry as? [String: Any]
+                {
+                    try obj.codeValue(modelType.decode(value), type: modelType, offset: offset)
+                }
+                
+                offset += modelType.size()
+            }
+            else if let propertyType = child.value.dynamicType as? Property.Type
+            {
+                if let label = child.label, entry = dict[label], value = entry as? Property
+                {
+                    try obj.codeValue(value, type: propertyType, offset: offset)
+                }
+                
+                offset += propertyType.size()
+            }
+            else
+            {
+                throw Error.TypeDoesNotConformToProperty(type: child.value.dynamicType)
+            }
+        }
+        
+        return obj
     }
     
 }
